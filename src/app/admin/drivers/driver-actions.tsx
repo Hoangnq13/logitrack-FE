@@ -12,6 +12,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { EditDriverDialog } from '@/components/admin/drivers/edit-driver-dialog';
 
 interface DriverActionsProps {
     driver: Driver;
@@ -19,6 +20,7 @@ interface DriverActionsProps {
 
 export function DriverActions({ driver }: DriverActionsProps) {
     const [loading, setLoading] = useState(false);
+    const [editOpen, setEditOpen] = useState(false);
 
     const handleDelete = async () => {
         if (!confirm('Bạn có chắc chắn muốn xoá tài xế này?')) return;
@@ -48,13 +50,20 @@ export function DriverActions({ driver }: DriverActionsProps) {
                     Copy ID Tài xế
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => alert('Tính năng Edit đang phát triển')}>
+                <DropdownMenuItem onClick={() => setEditOpen(true)}>
                     <Edit className="mr-2 h-4 w-4" /> Chỉnh sửa
                 </DropdownMenuItem>
                 <DropdownMenuItem className="text-red-600" onClick={handleDelete}>
                     <Trash className="mr-2 h-4 w-4" /> Xoá
                 </DropdownMenuItem>
             </DropdownMenuContent>
+
+            <EditDriverDialog
+                driver={driver}
+                open={editOpen}
+                onOpenChange={setEditOpen}
+                onSuccess={() => window.location.reload()}
+            />
         </DropdownMenu>
     );
 }

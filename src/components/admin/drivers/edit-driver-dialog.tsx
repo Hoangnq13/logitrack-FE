@@ -10,7 +10,6 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from '@/components/ui/dialog';
 import {
     Form,
@@ -29,103 +28,115 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { driverApi, CreateDriverDto } from '@/lib/api/drivers';
-import { userApi, User } from '@/lib/api/users';
+import { driverApi, Driver } from '@/lib/api/drivers';
 
 const formSchema = z.object({
-    userId: z.string().min(1, 'User ID là bắt buộc'),
     licensePlate: z.string().min(1, 'Biển số xe là bắt buộc'),
     vehicleType: z.string().min(1, 'Loại xe là bắt buộc'),
+    status: z.enum(['ONLINE', 'OFFLINE', 'IN_RIDE']),
+    isAvailable: z.boolean()
 });
 
-interface CreateDriverDialogProps {
+interface EditDriverDialogProps {
+    driver: Driver | null;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
     onSuccess: () => void;
 }
 
-export function CreateDriverDialog({ onSuccess }: CreateDriverDialogProps) {
-    const [open, setOpen] = useState(false);
+export function EditDriverDialog({ driver, open, onOpenChange, onSuccess }: EditDriverDialogProps) {
     const [loading, setLoading] = useState(false);
-    const [users, setUsers] = useState<User[]>([]);
-    const [loadingUsers, setLoadingUsers] = useState(false);
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            userId: '',
             licensePlate: '',
             vehicleType: '',
+            status: 'OFFLINE',
+            isAvailable: false
         },
     });
 
     useEffect(() => {
-        if (open) {
-            fetchUsers();
+        if (driver && open) {
+            form.reset({
+                licensePlate: driver.vehicle?.plateNumber || '',
+                vehicleType: driver.vehicle?.type || '',
+                status: driver.status || 'OFFLINE',
+                isAvailable: driver.isAvailable || false
+            });
         }
-    }, [open]);
-
-    async function fetchUsers() {
-        try {
-            setLoadingUsers(true);
-            const data = await userApi.getAll();
-            setUsers(data);
-        } catch (error) {
-            console.error('Failed to fetch users', error);
-        } finally {
-            setLoadingUsers(false);
-        }
-    }
+    }, [driver, open, form]);
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
+        if (!driver) return;
         try {
             setLoading(true);
-            const data: CreateDriverDto = {
-                userId: values.userId, // Normally we fetch user from dropdown, just input for now
-                licensePlate: values.licensePlate,
-                vehicleType: values.vehicleType,
-            };
-            await driverApi.create(data);
-            form.reset();
-            setOpen(false);
+            await driverApi.update(driver._id, {
+                vehicle: {
+                    plateNumber: values.licensePlate,
+                    type: values.vehicleType,
+                    model: driver.vehicle?.model || 'Generic' // Keeping existing
+                },
+                status: values.status,
+                isAvailable: values.isAvailable
+            });
+            onOpenChange(false);
             onSuccess();
         } catch (error) {
-            console.error('Failed to create driver', error);
-            // In real app add proper toast notification
-            alert('Tạo tài xế thất bại. Vui lòng thử lại.');
+            console.error('Failed to update driver', error);
+            alert('Cập nhật thất bại. Vui lòng thử lại.');
         } finally {
             setLoading(false);
         }
     }
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <Button>Thêm tài xế mới</Button>
-            </DialogTrigger>
+        <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                    <DialogTitle>Thêm tài xế mới</DialogTitle>
+                    <DialogTitle>Chỉnh sửa thông tin Tài xế</DialogTitle>
                 </DialogHeader>
 
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
                         <FormField
                             control={form.control}
-                            name="userId"
+                            name="status"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Chọn Tài khoản (User)</FormLabel>
+                                    <FormLabel>Trạng thái</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl>
-                                            <SelectTrigger disabled={loadingUsers}>
-                                                <SelectValue placeholder={loadingUsers ? "Đang tải danh sách..." : "Chọn người dùng để gán làm tài xế"} />
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Chọn trạng thái" />
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            {users.map(u => (
-                                                <SelectItem key={u._id} value={u._id}>
-                                                    {u.fullName || u.email || 'No Name'} ({u.firebaseUid ? "Đã liên kết" : "Chưa liên kết"})
-                                                </SelectItem>
-                                            ))}
+                                            <SelectItem value="ONLINE">ONLINE</SelectItem>
+                                            <SelectItem value="OFFLINE">OFFLINE</SelectItem>
+                                            <SelectItem value="IN_RIDE">IN_RIDE</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="isAvailable"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Sẵn sàng nhận cuốc</FormLabel>
+                                    <Select onValueChange={(v) => field.onChange(v === 'true')} defaultValue={field.value ? 'true' : 'false'}>
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Sẵn sàng" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="true">Có</SelectItem>
+                                            <SelectItem value="false">Không</SelectItem>
                                         </SelectContent>
                                     </Select>
                                     <FormMessage />
@@ -159,7 +170,7 @@ export function CreateDriverDialog({ onSuccess }: CreateDriverDialogProps) {
                             )}
                         />
                         <Button type="submit" className="w-full mt-6" disabled={loading}>
-                            {loading ? 'Đang tạo...' : 'Xác nhận tạo'}
+                            {loading ? 'Đang lưu...' : 'Lưu thay đổi'}
                         </Button>
                     </form>
                 </Form>

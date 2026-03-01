@@ -30,7 +30,7 @@ export default function LoginPage() {
             // 3. Gửi Token sang Backend Logitrack để xác thực và cấp Session JWT
             const response = await api.post("/auth/login", { idToken });
 
-            const { accessToken, user } = response.data;
+            const { accessToken, user } = response.data.data || response.data;
 
             // 4. Lưu vào Zustand Global Store & LocalStorage
             setAuth(user, accessToken);

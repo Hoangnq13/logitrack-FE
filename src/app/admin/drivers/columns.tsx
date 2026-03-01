@@ -5,15 +5,19 @@ import { DriverActions } from './driver-actions';
 
 export const columns: ColumnDef<Driver>[] = [
     {
-        accessorKey: 'userId', // In a real app we'd populate this with User Name
-        header: 'Tài khoản (UserID)',
+        accessorKey: 'user', // Populated User object
+        header: 'Tài khoản (Tên/Email)',
+        cell: ({ row }) => {
+            const user = row.getValue('user') as any;
+            return user?.fullName || user?.email || user?._id || 'Không xác định';
+        }
     },
     {
-        accessorKey: 'licensePlate',
+        accessorKey: 'vehicle.plateNumber',
         header: 'Biển số xe',
     },
     {
-        accessorKey: 'vehicleType',
+        accessorKey: 'vehicle.type',
         header: 'Loại xe',
     },
     {

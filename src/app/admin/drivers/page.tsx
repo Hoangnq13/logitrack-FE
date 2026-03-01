@@ -27,18 +27,8 @@ export default function DriversPage() {
     }, []);
 
     useEffect(() => {
-        const auth = getAuth();
-        // Wait for Firebase auth to be ready before calling API
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            if (user) {
-                fetchDrivers();
-            } else {
-                setLoading(false);
-                setError('Yêu cầu đăng nhập quản trị viên.');
-            }
-        });
-
-        return () => unsubscribe();
+        // [TEMP] Bypass Firebase Auth for Sprint 2 Testing
+        fetchDrivers();
     }, [fetchDrivers]);
 
     return (

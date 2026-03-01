@@ -26,4 +26,20 @@ api.interceptors.request.use(
     }
 );
 
+// Thêm Interceptor để xử lý lỗi (ví dụ: Token hết hạn 401)
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 401) {
+            // Xóa state trong Zustand
+            useAuthStore.getState().logout();
+            // Điều hướng về trang Login
+            if (typeof window !== 'undefined') {
+                window.location.href = '/login?session_expired=true';
+            }
+        }
+        return Promise.reject(error);
+    }
+);
+
 export default api;

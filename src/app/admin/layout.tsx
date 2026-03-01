@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
 import { useAuthStore } from "@/stores/authStore";
 
 export default function AdminLayout({
@@ -14,13 +15,11 @@ export default function AdminLayout({
     const { isAuthenticated, user, logout } = useAuthStore();
 
     useEffect(() => {
-        // Nếu chưa đăng nhập, tự động đá về trang /login nhưng có mang theo param `?redirect=/admin/xxx`
         if (!isAuthenticated) {
             router.push(`/login?redirect=${pathname}`);
         }
     }, [isAuthenticated, pathname, router]);
 
-    // Trong lúc chờ check token, có thể hiển thị loading trắng
     if (!isAuthenticated) return null;
 
     return (
@@ -31,8 +30,16 @@ export default function AdminLayout({
                     LogiTrack Admin
                 </div>
                 <nav className="flex-1 p-4 space-y-2">
-                    {/* Active Navigation later */}
-                    <div className="bg-gray-100 dark:bg-zinc-800 px-3 py-2 rounded-md font-medium">Dashboard</div>
+                    <Link href="/admin">
+                        <div className={`px-3 py-2 rounded-md font-medium transition ${pathname === '/admin' ? 'bg-gray-100 dark:bg-zinc-800' : 'hover:bg-gray-50 dark:hover:bg-zinc-900'}`}>
+                            Dashboard
+                        </div>
+                    </Link>
+                    <Link href="/admin/drivers">
+                        <div className={`px-3 py-2 rounded-md font-medium transition ${pathname.startsWith('/admin/drivers') ? 'bg-gray-100 dark:bg-zinc-800' : 'hover:bg-gray-50 dark:hover:bg-zinc-900'}`}>
+                            Quản lý Tài xế
+                        </div>
+                    </Link>
                 </nav>
                 <div className="p-4 border-t border-gray-200 dark:border-zinc-800">
                     <button
